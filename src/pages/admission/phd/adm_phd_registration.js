@@ -1,5 +1,5 @@
 // ** React Imports
-import { useState, Fragment } from 'react'
+import { useState, Fragment , forwardRef } from 'react'
 
 // ** Next Imports
 import Link from 'next/link'
@@ -44,6 +44,11 @@ import ReCAPTCHA from 'react-google-recaptcha';
 import Radio from '@mui/material/Radio'
 import RadioGroup from '@mui/material/RadioGroup'
 import FormLabel from '@mui/material/FormLabel'
+import Dialog from '@mui/material/Dialog'
+import DialogTitle from '@mui/material/DialogTitle'
+import DialogContent from '@mui/material/DialogContent'
+import DialogActions from '@mui/material/DialogActions'
+import DialogContentText from '@mui/material/DialogContentText'
 
 //import FormControlLabel from '@mui/material/FormControlLabel'
 
@@ -70,7 +75,9 @@ import EyeOffOutline from 'mdi-material-ui/EyeOffOutline'
 // ** Third Party Imports
 // import DatePicker from 'react-datepicker'
 // import DatePickerWrapper from 'src/@core/styles/libs/react-datepicker'
-import DatePicker from '@mui/lab/DatePicker'
+//import DatePicker from '@mui/lab/DatePicker'
+
+import DatePicker from 'react-datepicker'
 
 // import TextField from '@mui/material/TextField'
 import AdapterDateFns from '@mui/lab/AdapterDateFns'
@@ -87,7 +94,7 @@ import axios from 'axios'
 
 
 // ** Custom Component Imports
-import CustomInput from 'src/views/forms/form-elements/pickers/react-datepicker/PickersCustomInput'
+//import CustomInput from 'src/views/forms/form-elements/pickers/react-datepicker/PickersCustomInput'
 
 // ** Configs
 import themeConfig from 'src/configs/themeConfig'
@@ -100,6 +107,10 @@ import FooterIllustrationsV1 from 'src/views/pages/auth/FooterIllustrationsV1'
 import { NoteMultiple } from 'mdi-material-ui'
 import Select from '@mui/material/Select'
 import MenuItem from '@mui/material/MenuItem'
+import DatePickerWrapper from 'src/@core/styles/libs/react-datepicker'
+
+
+import 'react-datepicker/dist/react-datepicker.css'
 
 
 // ** Styled Components
@@ -202,8 +213,18 @@ const blood_group = [
    'AB-'
 ]
 
-//const SelectMultiple = () => {
-  // ** State
+
+const CustomInput = forwardRef((props, ref) => {
+  return <TextField fullWidth {...props} inputRef={ref}  InputProps={{
+    startAdornment: (
+      <InputAdornment position='start'>
+        <Icon icon='uim:calender' style={{ width: '20px', height: '20px' }} />
+      </InputAdornment>
+    )
+  }}
+   label=<Typography>Birth Date&nbsp;<span style={{ color : 'red'}}>*</span></Typography>
+   autoComplete='off' />
+})
 
 
 const AdmPhdReg = () => {
@@ -215,7 +236,14 @@ const AdmPhdReg = () => {
       middle_name : '',
       last_name : '',
       category : '',
-      colorblindness : ''
+      colorblindness : '',
+      mobile : '',
+      father_name : '',
+      blood_group : '',
+      email : '',
+      pwd : '',
+      gender : '',
+      dob : ''
   })
 
   const [errors , setErrors] = useState({
@@ -223,8 +251,17 @@ const AdmPhdReg = () => {
     middle_name : '',
     last_name : '',
     category: '',
-    colorblindness : ''
+    colorblindness : '',
+    mobile:'',
+    father_name : '',
+    blood_group : '',
+    email : '',
+    pwd : '',
+    gender : '',
+    dob : ''
   })
+
+  const [isButtonDisabled, setIsButtonDisabled] = useState(true);
 
   // ** Hooks
   const auth = useAuth()
@@ -251,84 +288,327 @@ const AdmPhdReg = () => {
     recaptcha_token : false
     }
 
-//     const [showPassword, setShowPassword] = useState(false)
-//     const [date, setDate] = useState(new Date())
-//     const [studentName, setStudentName] = useState()
+  const isAlphanumeric = (str) => {
+      return /^[a-zA-Z0-9./]+$/.test(str);
+  }
 
-//     const onhandleChangeName  = prop => event => {
-//       //   console.log(event.target.value)
-//       setStudentName({ ...values, [prop]: event.target.value })
-//   }
+  const isAlphanumeric_middle_last = (str) => {
+    return /^[a-zA-Z0-9./]*$/.test(str);
+}
+
+  const isAlphanumeric_father = (str) => {
+    return /^[a-zA-Z0-9 ./]*$/.test(str);
+}
+
+  function isValidEmail(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  }
+
+  function containsExactlyTenDigits(inputString) {
+    return /^\d{10}$/.test(inputString);
+  }
+
+  function isDateFormatValid(dateString) {
+    const regex = /^\d{2}-\d{2}-\d{4}$/;
+    return regex.test(dateString);
+  }
+
+  function formatDate(inputDate) {
+    const date = new Date(inputDate);
+    const year = date.getFullYear();
+    if(year < '1970'){
+     return false
+    }
+    else{
+     return true
+    }
+
+  }
 
   const handleChangeFormData =  prop => (event) => {
-    console.log(prop)
-    console.log(event)
     setValues({ ...values, [prop]: event.target.value })
+    if(prop === 'first_name'){
+      if(event.target.value === ''){
+        setErrors({...errors , [prop] : 'First Name is Required'})
+        setIsButtonDisabled(true)
+      }
+      else if(!isAlphanumeric(event.target.value)){
+        setErrors({...errors , [prop] : 'First Name Should Only be Alphanumeric'})
+        setIsButtonDisabled(true)
+      }
+      else {
+        setErrors({...errors , [prop] : ''})
+        if(values.category != '' && values.colorblindness != '' && values.mobile != '' && values.blood_group != '' && values.email != '' && values.pwd != '' && values.gender != '' && basicPicker != ''){
+          if(errors.middle_name == '' && errors.last_name == '' && errors.category == '' && errors.colorblindness == '' && errors.mobile == '' && errors.father_name == '' && errors.blood_group == '' && errors.email == '' && errors.pwd == '' && errors.gender == '' && errors.dob == ''){
+            console.log('No errors are Found')
+            setIsButtonDisabled(false)
+          }
+        }
+      }
+    }
+    if(prop === 'middle_name'){
+      // if(event.target.value === ''){
+      //   setErrors({...errors , [prop] : 'Middle Name is Required'})
+      //   setIsButtonDisabled(true)
+      // }
+      if(!isAlphanumeric_middle_last(event.target.value)){
+        setErrors({...errors , [prop] : 'Middle Name Should Only be Alphanumeric'})
+        setIsButtonDisabled(true)
+      }
+      else {
+        setErrors({...errors , [prop] : ''})
+        if(values.first_name != '' && values.category != '' && values.colorblindness != '' && values.mobile != '' && values.blood_group != '' && values.email != '' && values.pwd != '' && values.gender != '' && basicPicker != ''){
+          if(errors.first_name == '' && errors.last_name == '' && errors.category == '' && errors.colorblindness == '' && errors.mobile == '' && errors.father_name == '' && errors.blood_group == '' && errors.email == '' && errors.pwd == '' && errors.gender == '' && errors.dob == ''){
+            setIsButtonDisabled(false)
+          }
+        }
+      }
+    }
+
+    if(prop === 'last_name'){
+      // if(event.target.value === ''){
+      //   setErrors({...errors , [prop] : 'Last Name is Required'})
+      //   setIsButtonDisabled(true)
+      // }
+      if(!isAlphanumeric_middle_last(event.target.value)){
+        setErrors({...errors , [prop] : 'Last Name Should Only be Alphanumeric'})
+        setIsButtonDisabled(true)
+      }
+      else {
+        setErrors({...errors , [prop] : ''})
+        if(values.first_name != '' && values.category != '' && values.colorblindness != '' && values.mobile != '' && values.blood_group != '' && values.email != '' && values.pwd != '' && values.gender != '' && basicPicker != ''){
+          if(errors.first_name == '' && errors.middle_name == '' && errors.category == '' && errors.colorblindness == '' && errors.mobile == '' && errors.father_name == '' && errors.blood_group == '' && errors.email == '' && errors.pwd == '' && errors.gender == '' && errors.dob == ''){
+            setIsButtonDisabled(false)
+          }
+        }
+      }
+    }
+
+    if(prop === 'father_name'){
+      // if(event.target.value === ''){
+      //   setErrors({...errors , [prop] : 'Father Name is Required'})
+      //   setIsButtonDisabled(true)
+      // }
+      if(!isAlphanumeric_father(event.target.value)){
+        setErrors({...errors , [prop] : 'Father Name Should Only be Alphanumeric'})
+        setIsButtonDisabled(true)
+      }
+      else {
+        setErrors({...errors , [prop] : ''})
+        if(values.first_name != '' && values.category != '' && values.colorblindness != '' && values.mobile != '' && values.blood_group != '' && values.email != '' && values.pwd != '' && values.gender != '' && basicPicker != ''){
+          if(errors.first_name == '' && errors.middle_name == '' && errors.last_name == '' && errors.category == '' && errors.colorblindness == '' && errors.mobile == '' && errors.blood_group == '' && errors.email == '' && errors.pwd == '' && errors.gender == '' && errors.dob == ''){
+            setIsButtonDisabled(false)
+          }
+        }
+      }
+    }
+
+    if(prop === 'email'){
+
+      if(event.target.value === ''){
+        setErrors({...errors , [prop] : 'Email is Required'})
+        setIsButtonDisabled(true)
+      }
+      else if(!isValidEmail(event.target.value)){
+        setErrors({...errors , [prop] : 'Not a valid email address'})
+        setIsButtonDisabled(true)
+      }
+      else {
+        setErrors({...errors , [prop] : ''})
+        if(values.first_name != '' && values.category != '' && values.colorblindness != '' && values.mobile != '' && values.blood_group != '' && values.pwd != '' && values.gender != '' && basicPicker != ''){
+          if(errors.first_name == '' && errors.middle_name == '' && errors.last_name == '' && errors.category == '' && errors.colorblindness == '' && errors.mobile == '' && errors.father_name == '' && errors.blood_group == '' && errors.email == '' && errors.pwd == '' && errors.gender == '' && errors.dob == ''){
+            setIsButtonDisabled(false)
+          }
+        }
+      }
+    }
+
+    if(prop === 'mobile'){
+      if(event.target.value === ''){
+        setErrors({...errors , [prop] : 'Mobile No. is required'})
+        setIsButtonDisabled(true)
+      }
+      else if(!containsExactlyTenDigits(event.target.value)){
+        setErrors({...errors , [prop] : 'Mobile Number Should only contain 10 digits'})
+        setIsButtonDisabled(true)
+      }
+      else {
+        setErrors({...errors , [prop] : ''})
+        if(values.first_name != '' && values.category != '' && values.colorblindness != '' && values.mobile != '' && values.blood_group != '' && values.email != '' && values.pwd != '' && values.gender != '' && basicPicker != ''){
+          if(errors.first_name == '' && errors.middle_name == '' && errors.last_name == '' && errors.category == '' && errors.colorblindness == '' && errors.mobile == '' && errors.father_name == '' && errors.blood_group == '' && errors.email == '' && errors.pwd == '' && errors.gender == '' && errors.dob == ''){
+            setIsButtonDisabled(false)
+          }
+        }
+      }
+    }
+
+    if(prop === 'category'){
+      if(event.target.value === ''){
+        setErrors({...errors , [prop] : 'Selection of Category is required'})
+        setIsButtonDisabled(true)
+      }
+      else {
+        setErrors({...errors , [prop] : ''})
+        if(values.first_name != '' && values.colorblindness != '' && values.mobile != '' && values.blood_group != '' && values.email != '' && values.pwd != '' && values.gender != '' && basicPicker != ''){
+          if(errors.first_name == '' && errors.middle_name == '' && errors.last_name == '' && errors.colorblindness == '' && errors.mobile == '' && errors.father_name == '' && errors.blood_group == '' && errors.email == '' && errors.pwd == '' && errors.gender == '' && errors.dob == ''){
+            setIsButtonDisabled(false)
+          }
+        }
+      }
+    }
+
+    if(prop === 'pwd'){
+      if(event.target.value === ''){
+        setErrors({...errors , [prop] : 'Selection of PwD is required'})
+        setIsButtonDisabled(true)
+      }
+      else {
+        setErrors({...errors , [prop] : ''})
+        if(values.first_name != '' && values.category != '' && values.colorblindness != '' && values.mobile != '' && values.blood_group != '' && values.email != '' && values.gender != '' && basicPicker != ''){
+          if(errors.first_name == '' && errors.middle_name == '' && errors.last_name == '' && errors.category == '' && errors.colorblindness == '' && errors.mobile == '' && errors.father_name == '' && errors.blood_group == '' && errors.email == '' && errors.gender == '' && errors.dob == ''){
+            setIsButtonDisabled(false)
+          }
+        }
+      }
+    }
+
+    if(prop === 'gender'){
+      if(event.target.value === ''){
+        setErrors({...errors , [prop] : 'Selection of Gender is required'})
+        setIsButtonDisabled(true)
+      }
+      else {
+        setErrors({...errors , [prop] : ''})
+        if(values.first_name != '' && values.category != '' && values.colorblindness != '' && values.mobile != '' && values.blood_group != '' && values.email != '' && values.pwd != '' && basicPicker != ''){
+          if(errors.first_name == '' && errors.middle_name == '' && errors.last_name == '' && errors.category == '' && errors.colorblindness == '' && errors.mobile == '' && errors.father_name == '' && errors.blood_group == '' && errors.email == '' && errors.pwd == '' && errors.dob == ''){
+            setIsButtonDisabled(false)
+          }
+        }
+      }
+    }
+
+    if(prop === 'blood_group'){
+      if(event.target.value === ''){
+        setErrors({...errors , [prop] : 'Selection of Blood Group is required'})
+        setIsButtonDisabled(true)
+      }
+      else {
+        setErrors({...errors , [prop] : ''})
+        if(values.first_name != '' && values.category != '' && values.colorblindness != '' && values.mobile != '' && values.email != '' && values.pwd != '' && values.gender != '' && basicPicker != ''){
+          if(errors.first_name == '' && errors.middle_name == '' && errors.last_name == '' && errors.category == '' && errors.colorblindness == '' && errors.mobile == '' && errors.father_name == '' && errors.email == '' && errors.pwd == '' && errors.gender == '' && errors.dob == ''){
+            setIsButtonDisabled(false)
+          }
+        }
+      }
+    }
+
+    if (prop === 'colorblindness') {
+      if(event.target.value === ''){
+        setErrors({...errors , [prop] : 'Selecting correct option for Color Blindness is required'})
+        setIsButtonDisabled(true)
+      }
+      else {
+        setErrors({...errors , [prop] : ''})
+        if(values.first_name != '' && values.category != '' && values.mobile != '' && values.blood_group != '' && values.email != '' && values.pwd != '' && values.gender != '' && basicPicker != ''){
+          if(errors.first_name == '' && errors.middle_name == '' && errors.last_name == '' && errors.category == '' && errors.mobile == '' && errors.father_name == '' && errors.blood_group == '' && errors.email == '' && errors.pwd == '' && errors.gender == '' && errors.dob == ''){
+            setIsButtonDisabled(false)
+          }
+        }
+      }
   }
+
+}
 
 
     // ** State
-  const [basicPicker, setBasicPicker] = useState(new Date()) // set date to baseicpicker
+  const [basicPicker, setBasicPicker] = useState(null) // set date to baseicpicker
 
   const [selectedDate , setSelectedDate] = useState(new Date())
+
+  const [open, setOpen] = useState(false)
+  const handleClickOpen = (event) => {
+    if(event.target.value === 'yes'){
+    setOpen(true)
+    }
+    else{
+    setOpen(false)
+    }
+  }
+  const handleClose = () => setOpen(false)
 
   // ** Hook
   //const { i18n } = useTranslation()
 
     // ** Hooks
 
-  const sitekey = '6Lf8isYkAAAAAAElKsix4YfzNkQUXWkIBK0CZbfi'
-
-//   const {
-
-//     handleSubmit,
-//     control,
-//     register,
-//     setValue,
-//     formState: { errors , isDirty, dirtyFields }
-//   } = useForm({
-//     defaultValues,
-//     mode: 'onChange',
-//     resolver: yupResolver(schema)
-//   })
-
-//   console.log(errors);
-//   console.log("isDirty,dirtyFields",isDirty,dirtyFields);
-
-  const onSubmit = data => {
-
-    // console.log('submitted here after form submit');
-    // console.log(data);
-    auth.registerUser({ data }, (response) => {
+  //const sitekey = '6Lf8isYkAAAAAAElKsix4YfzNkQUXWkIBK0CZbfi'
 
 
-    });
+  const submitHandler = (event) => {
+
+     event.preventDefault();
+     var firstname = values.first_name;
+     var middlename = values.middle_name;
+     var lastname = values.last_name;
+     var pwd = values.pwd;
+     var category = values.category;
+     var email = values.email;
+     var mobile = values.mobile;
+     var gender = values.gender;
+     const formattedDate = format(basicPicker, "dd-MM-yyyy");
+     var fathername = values.father_name;
+     var bloodgroup = values.blood_group;
+     var colorblindness = values.colorblindness;
+
+     var datanew  = {
+      firstname : firstname,
+      middlename : middlename,
+      lastname : lastname,
+      pwd,
+      category,
+      email,
+      mobile,
+      gender,
+      formattedDate,
+      fathername,
+      bloodgroup,
+      colorblindness
+     }
+
+     auth.registerUser({ datanew }, (response) => {})
+
   }
 
-  const onClick = data => {
-
-
-    auth.checkLoginAdmnNo({ data }, (response) => {
-
-      // console.log(auth.admnNoMsg.data.data.date_of_birth);
-       if(response.status === 1)
-       {
-
-       }
-       else if(response.status === 2)
-       {
-        setToggleResult(response.msg);
-        setErrorList([])
-       }
-       else{
-        setErrorList(response.msg.response.data.message);
-        setToggleResult(null);
-       }
-    })
+  const handleClickColorBlindData = (event) => {
+     console.log(event.target.value)
   }
+
+  // const onClick = data => {
+
+
+  //   auth.checkLoginAdmnNo({ data }, (response) => {
+
+  //     // console.log(auth.admnNoMsg.data.data.date_of_birth);
+  //      if(response.status === 1)
+  //      {
+
+  //      }
+  //      else if(response.status === 2)
+  //      {
+  //       setToggleResult(response.msg);
+  //       setErrorList([])
+  //      }
+  //      else{
+  //       setErrorList(response.msg.response.data.message);
+  //       setToggleResult(null);
+  //      }
+  //   })
+  // }
+
+
 
   return (
-    <>
+    <DatePickerWrapper>
     <Box className='content-center'>
     <Grid container spacing={4} >
     <Grid item xs={12} md={2} sx={{ alignSelf: 'flex-start' }}>
@@ -370,14 +650,14 @@ const AdmPhdReg = () => {
     </Card>
         </Box>
 
-        <form noValidate autoComplete='off'>
+        <form noValidate autoComplete='off' onSubmit={submitHandler}>
         <Grid container spacing={2}>
             <Grid item xs={12} md={6} sx={{ alignSelf: 'flex-start' }}>
 
             <FormControl fullWidth sx={{ mb: 4 }}>
               <TextField
                 fullWidth
-                label='First Name'
+                label=<Typography>First Name<span style={{ color : 'red'}}>*</span></Typography>
                 name='first_name'
                 placeholder='Enter First Name'
                 value={values.first_name}
@@ -385,19 +665,19 @@ const AdmPhdReg = () => {
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position='start'>
-                      <Icon icon='mdi:account-outline' />
+                      <Icon icon='mdi:account-outline' style={{ width: '20px', height: '20px' }} />
                     </InputAdornment>
                   )
                 }}
               />
-                {errors.first_name && <FormHelperText sx={{ color: 'error.main' }}>{errors.first_name.message}</FormHelperText>}
+                {errors.first_name && <FormHelperText sx={{ color: 'error.main' }}>{errors.first_name}</FormHelperText>}
                 {/* {errorList.first_name && <FormHelperText sx={{ color: 'error.main' }}>{errorList.first_name[0]}</FormHelperText>} */}
               </FormControl>
 
               <FormControl fullWidth sx={{ mb: 4 }}>
               <TextField
                 fullWidth
-                label='Last Name'
+                label=<Typography>Last Name</Typography>
                 name='last_name'
                 placeholder='Enter Last Name'
                 value={values.last_name}
@@ -405,18 +685,18 @@ const AdmPhdReg = () => {
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position='start'>
-                      <Icon icon='mdi:account-outline' />
+                      <Icon icon='mdi:account-outline' style={{ width: '20px', height: '20px' }} />
                     </InputAdornment>
                   )
                 }}
               />
-                {errors.last_name && <FormHelperText sx={{ color: 'error.main' }}>{errors.last_name.message}</FormHelperText>}
+                {errors.last_name && <FormHelperText sx={{ color: 'error.main' }}>{errors.last_name}</FormHelperText>}
                 {/* {errorList.last_name && <FormHelperText sx={{ color: 'error.main' }}>{errorList.last_name[0]}</FormHelperText>} */}
               </FormControl>
 
               <FormControl fullWidth sx={{ mb: 4 }}>
-                    <InputLabel htmlFor='grouped-native-select'>Divyang (PwD)</InputLabel>
-                    <Select label='Grouping More' defaultValue='' id='grouped-native-select'>
+                    <InputLabel htmlFor='grouped-native-select'><Icon icon='mdi:trophy-award' style={{ width: '20px', height: '20px' }} />&nbsp;Divyang (PwD)<span style={{ color : 'red'}}>*</span></InputLabel>
+                    <Select label='Grouping More More' value={values.pwd} name='pwd' onChange={handleChangeFormData('pwd')} id='grouped-native-select pwd'>
                     <MenuItem value=''>
                         <em> -- Please Select --</em>
                     </MenuItem>
@@ -424,14 +704,13 @@ const AdmPhdReg = () => {
                     <MenuItem value={value}>{value}</MenuItem>
                     ))}
                     </Select>
-
-                    {/* <FormHelperText>With label + helper text</FormHelperText> */}
+                    {errors.pwd && <FormHelperText sx={{ color: 'error.main' }}>{errors.pwd}</FormHelperText>}
                 </FormControl>
 
               <FormControl fullWidth sx={{ mb: 4 }}>
               <TextField
                 fullWidth
-                label='Email'
+                label=<Typography>Email<span style={{ color : 'red'}}>*</span></Typography>
                 name='email'
                 placeholder='Enter Email'
                 value={values.email}
@@ -439,12 +718,45 @@ const AdmPhdReg = () => {
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position='start'>
-                      <Icon icon='mdi:email-edit' />
+                      <Icon icon='mdi:email-edit' style={{ width: '20px', height: '20px' }} />
                     </InputAdornment>
                   )
                 }}
               />
-                {errors.email && <FormHelperText sx={{ color: 'error.main' }}>{errors.email.message}</FormHelperText>}
+                {errors.email && <FormHelperText sx={{ color: 'error.main' }}>{errors.email}</FormHelperText>}
+                {/* {errorList.last_name && <FormHelperText sx={{ color: 'error.main' }}>{errorList.last_name[0]}</FormHelperText>} */}
+              </FormControl>
+
+              <FormControl fullWidth sx={{ mb: 4 }}>
+                    <InputLabel htmlFor='grouped-native-select'><Icon icon='mdi:gender-transgender' style={{ width: '20px', height: '20px' }} />&nbsp;Gender<span style={{ color : 'red'}}>*</span></InputLabel>
+                    <Select label='Grouping More' name='gender' value={values.gender} id='grouped-native-select gender' onChange={handleChangeFormData('gender')}>
+                    <MenuItem value=''>
+                        <em> -- Please Select --</em>
+                    </MenuItem>
+                    { gender.map(value => (
+                    <MenuItem value={value}>{value}</MenuItem>
+                    ))}
+                    </Select>
+                    {errors.gender && <FormHelperText sx={{ color: 'error.main' }}>{errors.gender}</FormHelperText>}
+                </FormControl>
+
+                <FormControl fullWidth sx={{ mb: 4 }}>
+              <TextField
+                fullWidth
+                label=<Typography>Father's Name</Typography>
+                name='father_name'
+                placeholder='Enter Father Name'
+                value={values.father_name}
+                onChange={handleChangeFormData('father_name')}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position='start'>
+                      <Icon icon='mdi:account-outline' style={{ width: '20px', height: '20px' }} />
+                    </InputAdornment>
+                  )
+                }}
+              />
+                {errors.father_name && <FormHelperText sx={{ color: 'error.main' }}>{errors.father_name}</FormHelperText>}
                 {/* {errorList.last_name && <FormHelperText sx={{ color: 'error.main' }}>{errorList.last_name[0]}</FormHelperText>} */}
               </FormControl>
 
@@ -463,18 +775,18 @@ const AdmPhdReg = () => {
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position='start'>
-                      <Icon icon='mdi:account-outline' />
+                      <Icon icon='mdi:account-outline' style={{ width: '20px', height: '20px' }} />
                     </InputAdornment>
                   )
                 }}
               />
-                {errors.middle_name && <FormHelperText sx={{ color: 'error.main' }}>{errors.middle_name.message}</FormHelperText>}
+                {errors.middle_name && <FormHelperText sx={{ color: 'error.main' }}>{errors.middle_name}</FormHelperText>}
                 {/* {errorList.last_name && <FormHelperText sx={{ color: 'error.main' }}>{errorList.last_name[0]}</FormHelperText>} */}
               </FormControl>
 
               <FormControl fullWidth sx={{ mb: 4 }}>
-                    <InputLabel htmlFor='grouped-native-select'>Category</InputLabel>
-                    <Select label='Grouping' defaultValue='' id='grouped-native-select'>
+                    <InputLabel htmlFor='grouped-native-select'><Icon icon='mdi:shape-plus' style={{ width: '20px', height: '20px' }} />&nbsp;Category<span style={{ color : 'red'}}>*</span></InputLabel>
+                    <Select label='Grouping More More' name='category' value={values.category} onChange={handleChangeFormData('category')} id='grouped-native-select category'>
                     <MenuItem value=''>
                         <em> -- Please Select --</em>
                     </MenuItem>
@@ -482,57 +794,120 @@ const AdmPhdReg = () => {
                     <MenuItem value={value}>{value}</MenuItem>
                     ))}
                     </Select>
+                    {errors.category && <FormHelperText sx={{ color: 'error.main' }}>{errors.category}</FormHelperText>}
                     {/* <FormHelperText>With label + helper text</FormHelperText> */}
                 </FormControl>
 
               <FormControl fullWidth sx={{ mb: 4 }}>
               <TextField
                 fullWidth
-                label='Mobile Number'
+                label=<Typography>Mobile Number&nbsp;<span style={{ color : 'red'}}>*</span></Typography>
                 name='mobile'
+                id='mobile'
                 placeholder='Enter Mobile Number'
-                value={values.last_name}
+                value={values.mobile}
                 onChange={handleChangeFormData('mobile')}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position='start'>
-                      <Icon icon='mdi:account-outline' />
+                      <Icon icon='mdi:phone-in-talk' style={{ width: '20px', height: '20px' }} />
                     </InputAdornment>
                   )
                 }}
               />
-                {errors.mobile && <FormHelperText sx={{ color: 'error.main' }}>{errors.mobile.message}</FormHelperText>}
+                {errors.mobile && <FormHelperText sx={{ color: 'error.main' }}>{errors.mobile}</FormHelperText>}
                 {/* {errorList.last_name && <FormHelperText sx={{ color: 'error.main' }}>{errorList.last_name[0]}</FormHelperText>} */}
               </FormControl>
 
 
                 <FormControl fullWidth sx={{ mb: 4 }}>
 
-                      <LocalizationProvider dateAdapter={AdapterDateFns}>
+                      {/* <LocalizationProvider dateAdapter={AdapterDateFns}>
                       <DatePicker
-                        label='Date Of Birth'
+                        label=<Typography>Date Of Birth<span style={{ color : 'red'}}>*</span></Typography>
                         inputFormat="dd/MM/yyyy"
+                        name="dob"
+                        openTo="day"
                         value = {basicPicker}
-                        //readOnly
-                        onChange={newValue => setBasicPicker(newValue)}
-                        renderInput={params => <TextField {...params} />}
-                        error={Boolean(errors.date_of_birth)}
+                        onChange={(newValue) => { console.log('newvalue'+ newValue); setBasicPicker(newValue) }}
+                        renderInput={params => <TextField {...params}/>}
+                        error={Boolean(errors.dob)}
                       />
-                    </LocalizationProvider>
-
+                    </LocalizationProvider> */}
+                    <DatePicker
+                    selected={basicPicker}
+                    dateFormat="dd-MM-yyyy"
+                    showYearDropdown
+                    showMonthDropdown
+                    placeholderText='DD-MM-YYYY'
+                    customInput={<CustomInput />}
+                    id='form-layouts-separator-date'
+                    onChange={(newValue,basicPicker) => { if(newValue == null || newValue == 'Invalid Date' || !formatDate(newValue)) {
+                      //setBasicPicker(basicPicker)
+                      setErrors({...errors , dob : 'Date is invalid'})
+                      setIsButtonDisabled(true)
+                      } else {
+                      setBasicPicker(newValue)
+                      setErrors({...errors , dob : ''})
+                      if(values.first_name != '' && values.category != '' && values.mobile != '' && values.blood_group != '' && values.email != '' && values.pwd != '' && values.gender != '' && values.colorblindness != ''){
+                        console.log('None of the fields are empty for dob section');
+                        if(errors.first_name == '' && errors.middle_name == '' && errors.last_name == '' && errors.category == '' && errors.mobile == '' && errors.father_name == '' && errors.blood_group == '' && errors.email == '' && errors.pwd == '' && errors.gender == ''){
+                          console.log('No error was found here');
+                          setIsButtonDisabled(false)
+                        }
+                      }
+                      }
+                      }}
+                     error={Boolean(errors.dob)}
+                    />
+                    {errors.dob && <FormHelperText sx={{ color: 'error.main' }}>{errors.dob}</FormHelperText>}
               </FormControl>
 
-
+              <FormControl fullWidth sx={{ mb: 4 }}>
+                    <InputLabel htmlFor='grouped-native-select'><Icon icon='mdi:water-outline' style={{ width: '20px', height: '20px' }} />&nbsp;Blood Group<span style={{ color : 'red'}}>*</span></InputLabel>
+                    <Select label='Grouping More More' value={values.blood_group} name='blood_group' onChange={handleChangeFormData('blood_group')} id='grouped-native-select blood_group'>
+                    <MenuItem value=''>
+                        <em> -- Please Select --</em>
+                    </MenuItem>
+                    { blood_group.map(value => (
+                    <MenuItem value={value}>{value}</MenuItem>
+                    ))}
+                    </Select>
+                    {/* <FormHelperText>With label + helper text</FormHelperText> */}
+                    {errors.blood_group && <FormHelperText sx={{ color: 'error.main' }}>{errors.blood_group}</FormHelperText>}
+                </FormControl>
              </Grid>
 
              <FormControl sx={{ mb:4, flexWrap: 'wrap', flexDirection: 'row' }}>
-             <FormLabel component='legend' sx={{ margin: '16px 0px 0px 8px !important' }} >Colourblindness &nbsp; &nbsp;</FormLabel>
-              <RadioGroup row value={values.colorblindness} name='colorblindness' id='colorblindness' onChange={handleChangeFormData('colorblindness')} aria-label='colorblindness'>
-                <FormControlLabel value='checked' control={<Radio />} label='Checked' />
-                <FormControlLabel value='unchecked' control={<Radio />} label='Unchecked' />
+             <FormLabel component='legend' sx={{ margin: '16px 0px 0px 8px !important' }} >Do you have Color Blindness/Uniocularity? <span style={{ color : 'red'}}>*</span> &nbsp; &nbsp;</FormLabel>
+              <RadioGroup row value={values.colorblindness} name='colorblindness' id='colorblindness' onClick={handleClickOpen} onChange={handleChangeFormData('colorblindness')} aria-label='colorblindness'>
+                <FormControlLabel value='yes' control={<Radio />} label='Yes' />
+                <FormControlLabel value='no' control={<Radio />} label='No' />
               </RadioGroup>
           </FormControl>
-          <ButtonNew fullWidth size='large' type='submit' variant='contained' sx={{ mb: 7}}>
+          <Dialog
+        open={open}
+        disableEscapeKeyDown
+        aria-labelledby='alert-dialog-title'
+        aria-describedby='alert-dialog-description'
+        onClose={(event, reason) => {
+          if (reason !== 'backdropClick') {
+            handleClose()
+          }
+        }}
+      >
+        <DialogTitle id='alert-dialog-title'>Information!</DialogTitle>
+        <DialogContent>
+          <DialogContentText id='alert-dialog-description'>
+           Candidates with colour blindness / uniocularity are not permissible for Applied Geology (AGL).
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions className='dialog-actions-dense'>
+          {/* <Button onClick={handleClose}>Disagree</Button> */}
+          <Button onClick={handleClose}>OK</Button>
+        </DialogActions>
+      </Dialog>
+          <ButtonNew fullWidth size='large' disabled={isButtonDisabled} type='submit' variant='contained' sx={{ mb: 7}}>
             Submit
           </ButtonNew>
           </Grid>
@@ -557,7 +932,7 @@ const AdmPhdReg = () => {
     </Grid>
     <FooterIllustrationsV1 />
   </Box>
-  </>
+  </DatePickerWrapper>
   )
 }
 
